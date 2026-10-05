@@ -190,3 +190,23 @@ implemented (use proxy mode).
   or with `sudo` (Linux), or set `killswitch: false`.
 - Everything connects but a site is slow → try a different server in the list;
   `--check` shows the RTT so you can compare.
+
+---
+
+## 8. Releases (automated .exe build)
+
+A GitHub Actions workflow (`.github/workflows/release.yml`) builds
+`bypass.exe` on `windows-latest` with PyInstaller.
+
+- **Tag push** → builds and publishes a **GitHub Release** with `bypass.exe`
+  and a `bypass-windows-x64.zip` bundle (exe + example config + README):
+
+  ```bash
+  git tag v0.1.0
+  git push origin v0.1.0
+  ```
+
+- **Manual run** (Actions tab → "Build and release bypass.exe" → Run workflow)
+  → builds and uploads the `.exe` as a workflow **artifact** (no release).
+
+`sing-box.exe` is never bundled — it stays a separate download.

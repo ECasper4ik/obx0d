@@ -1,0 +1,77 @@
+name: Build and release bypass.exe
+
+# Builds the Windows .exe with PyInstaller and attaches it to a GitHub Release.
+# Triggers:
+#   * pushing a tag like v0.1.0  -> builds and publishes a release for that tag
+#   * manual "Run workflow"      -> builds and uploads the .exe as an artifact only
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write        # needed to create the release and upload assets
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Build bypass.exe
+        shell: pwsh
+        run: |
+          pyinstaller --onefile --name bypass `
+            --collect-all rich `
+            --collect-all certifi `
+            bypass.py
+
+      - name: Smoke-test the binary
+        shell: pwsh
+        run: |
+          .\dist\bypass.exe --version
+
+      - name: Package release bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path bundle | Out-Null
+          Copy-Item dist\bypass.exe        bundle\
+          Copy-Item config.example.yaml    bundle\
+          Copy-Item README.md              bundle\
+          Compress-Archive -Path bundle\* -DestinationPath bypass-windows-x64.zip -Force
+
+      - name: Upload build artifact (every run)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bypass-windows-x64
+          path: |
+            dist/bypass.exe
+            bypass-windows-x64.zip
+
+      - name: Publish release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/bypass.exe
+            bypass-windows-x64.zip
+          generate_release_notes: true
+          body: |
+            Automated Windows build of **netbypass** (`bypass.exe`).
+
+            `sing-box.exe` is **not** bundled — download it separately from
+            https://github.com/SagerNet/sing-box/releases and point
+            `config.yaml` (`singbox_path`) at it. See README.md for setup.
