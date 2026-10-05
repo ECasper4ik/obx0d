@@ -1,0 +1,5 @@
+PyYAML>=6.0
+requests>=2.31
+dnspython>=2.6
+rich>=13.7
+PySocks>=1.7

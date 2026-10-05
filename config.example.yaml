@@ -1,0 +1,83 @@
+# ============================================================================
+# netbypass — example profile.  Copy to config.yaml and fill in YOUR servers.
+# Nothing here is hard-coded in the program; this file is the whole setup.
+# ============================================================================
+
+client:
+  # "proxy" = run a local SOCKS5/HTTP proxy on 127.0.0.1 (no admin needed).
+  #           Point your browser / app at it. Best for Discord/Telegram/browser.
+  # "tun"   = system-wide tunnel (ALL apps). Needs admin rights + wintun.dll.
+  mode: proxy
+
+  local:
+    host: 127.0.0.1
+    port: 2080          # your apps connect here: socks5://127.0.0.1:2080
+
+  # Path to the sing-box executable you downloaded separately.
+  # Windows example: "C:\\Tools\\sing-box\\sing-box.exe"
+  singbox_path: "C:\\Tools\\sing-box\\sing-box.exe"
+
+  # DNS used INSIDE the tunnel (DNS-over-HTTPS avoids DNS leaks).
+  dns: "https://1.1.1.1/dns-query"
+
+  # Block all traffic if the tunnel drops (needs admin/root). Recommended.
+  killswitch: false
+
+# ----------------------------------------------------------------------------
+# Your servers, tried top-to-bottom. First one that answers wins; if it dies,
+# the orchestrator fails over to the next automatically.
+# Fill these in from the config your server/provider gave you.
+# ----------------------------------------------------------------------------
+servers:
+  # --- Shadowsocks example ---
+  - name: "my-ss-fra"
+    type: shadowsocks
+    server: "203.0.113.10"       # <-- your server IP/host
+    server_port: 8388
+    method: "2022-blake3-aes-128-gcm"
+    password: "PUT-YOUR-PASSWORD-HERE"
+
+  # --- VLESS + Reality example (looks like ordinary TLS to the network) ---
+  - name: "my-vless-reality"
+    type: vless
+    server: "198.51.100.7"
+    server_port: 443
+    uuid: "PUT-YOUR-UUID-HERE"
+    flow: "xtls-rprx-vision"
+    tls:
+      sni: "www.microsoft.com"   # the domain you borrow for the handshake
+      fingerprint: "chrome"
+      reality:
+        public_key: "PUT-SERVER-REALITY-PUBLIC-KEY"
+        short_id: "0123abcd"
+
+  # --- WireGuard example ---
+  - name: "my-wg"
+    type: wireguard
+    server: "192.0.2.5"
+    server_port: 51820
+    private_key: "YOUR-CLIENT-PRIVATE-KEY"
+    peer_public_key: "SERVER-PUBLIC-KEY"
+    local_address: ["10.7.0.2/32"]
+
+# ----------------------------------------------------------------------------
+# Optional split tunneling: if set, ONLY these domains/subnets go through the
+# tunnel and everything else stays direct. Comment out for a full tunnel.
+# ----------------------------------------------------------------------------
+# route_only:
+#   - "discord.com"
+#   - "discord.gg"
+#   - "discordapp.com"
+#   - "telegram.org"
+#   - "t.me"
+#   - "149.154.160.0/20"     # Telegram DC range (example)
+
+logging:
+  level: INFO               # DEBUG shows server IPs/SNI — keep at INFO normally
+  file: null                # e.g. "netbypass.log" to also log to a file
+
+check:
+  ip_endpoint:   "https://api.ipify.org?format=json"
+  geo_endpoint:  "https://ipinfo.io/json"
+  ipv6_endpoint: "https://api6.ipify.org?format=json"
+  dns_probe:     "whoami.akamai.net"
